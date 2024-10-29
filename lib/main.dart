@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // Import for using Timer
+import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +14,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Productivity App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.green, // Use a green seed color
+          primary: Colors.green, // Primary color
+          secondary: Colors.greenAccent, // Secondary color
+          surface: Colors.lightGreen, // Surface color
+          background: Colors.green[50], // Background color
+        ),
         useMaterial3: true,
       ),
       home: const FirstPage(), // Set FirstPage as the initial home
@@ -30,41 +37,39 @@ class FirstPage extends StatefulWidget {
 
 class _FirstPageState extends State<FirstPage> {
   int coins = 0;
-  int? timerDuration; // Changed to nullable int
+  int timerDuration = 10; // Default to 10 minutes
   bool isTimerRunning = false;
   late Timer timer;
   int remainingTime = 0; // Time remaining in seconds
 
   void startTimer() {
-    if (timerDuration != null && timerDuration! > 0) {
-      setState(() {
-        isTimerRunning = true;
-        remainingTime = timerDuration! * 60; // Convert to seconds
-      });
+    setState(() {
+      isTimerRunning = true;
+      remainingTime = timerDuration * 60; // Convert to seconds
+    });
 
-      timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
-        if (remainingTime <= 0) {
-          // Timer completed, increase coin count
-          setState(() {
-            coins += 10; // Increase coins by 10
-            isTimerRunning = false;
-            remainingTime = 0; // Reset remaining time
-          });
-          timer.cancel();
-          // Show a completion message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pomodoro completed! You earned 10 coins!')),
-          );
-        } else {
-          setState(() {
-            remainingTime--; // Decrease remaining time
-          });
-        }
-      });
-    }
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
+      if (remainingTime <= 0) {
+        // Timer completed, increase coin count
+        setState(() {
+          coins += 10; // Increase coins by 10
+          isTimerRunning = false;
+          remainingTime = 0; // Reset remaining time
+        });
+        timer.cancel();
+        // Show a completion message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pomodoro completed! You earned 10 coins!')),
+        );
+      } else {
+        setState(() {
+          remainingTime--; // Decrease remaining time
+        });
+      }
+    });
   }
 
-  void stopTimer() {
+  void cancelTimer() {
     if (isTimerRunning) {
       timer.cancel();
       setState(() {
@@ -93,7 +98,7 @@ class _FirstPageState extends State<FirstPage> {
           ),
         ],
       ),
-      body: Center( // Centering the content
+      body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -101,38 +106,57 @@ class _FirstPageState extends State<FirstPage> {
             children: <Widget>[
               Text('Total Coins: $coins', style: const TextStyle(fontSize: 24)),
               const SizedBox(height: 20),
-              Text('Set Pomodoro Timer (10 to 120 minutes):'),
+              Text('Set Pomodoro Timer ($timerDuration:00):'), // Updated to show current duration
               const SizedBox(height: 10),
-              DropdownButton<int>(
-                value: timerDuration, // Changed to nullable int
-                hint: const Text('Select duration'),
-                items: List.generate(121, (index) => index + 10) // Generates numbers from 10 to 120
-                    .map<DropdownMenuItem<int>>((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text('$value minutes'),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
+              SleekCircularSlider(
+                initialValue: timerDuration.toDouble(), // Start at 10 minutes as a double
+                min: 10,
+                max: 120,
+                onChange: (double value) {
                   setState(() {
-                    timerDuration = newValue; // Set selected value
+                    timerDuration = value.toInt(); // Update timer duration
+                    remainingTime = timerDuration * 60; // Update remaining time for display
                   });
+                },
+                appearance: CircularSliderAppearance(
+                  customColors: CustomSliderColors(
+                    dotColor: Colors.greenAccent,
+                    trackColor: Colors.green[100],
+                    progressBarColor: Colors.green,
+                  ),
+                  size: 250, // Size of the circular slider
+                ),
+                // Add an image inside the slider
+                innerWidget: (double value) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Show the current timer value while sliding
+                      Text(
+                        '${value.toInt()}:00', // Display current value in minutes
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      // Place your image here
+                      Image.asset(
+                        'images/tree.png', // Updated path to the image
+                        fit: BoxFit.cover,
+                        height: 100, // Adjust height as needed
+                      ),
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 20),
-              if (isTimerRunning) // Show countdown if the timer is running
-                Text(
-                  formattedTime,
-                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-                ),
+              // Move the countdown timer display to the bottom
+              Text(
+                formattedTime,
+                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: isTimerRunning ? null : startTimer,
-                child: const Text('Start Timer'),
-              ),
-              ElevatedButton(
-                onPressed: isTimerRunning ? stopTimer : null,
-                child: const Text('Stop Timer'),
+                onPressed: isTimerRunning ? cancelTimer : startTimer,
+                child: Text(isTimerRunning ? 'Cancel Timer' : 'Start Timer'),
               ),
             ],
           ),
@@ -143,7 +167,7 @@ class _FirstPageState extends State<FirstPage> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.deepPurple),
+              decoration: BoxDecoration(color: Colors.green),
               child: const Text(
                 'Navigation',
                 style: TextStyle(
