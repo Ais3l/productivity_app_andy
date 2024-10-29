@@ -74,6 +74,8 @@ class _FirstPageState extends State<FirstPage> {
       timer.cancel();
       setState(() {
         isTimerRunning = false;
+        timerDuration = 10; // Reset timer duration to 10 minutes
+        remainingTime = timerDuration * 60; // Reset remaining time to 10 minutes in seconds
       });
     }
   }
@@ -106,7 +108,6 @@ class _FirstPageState extends State<FirstPage> {
             children: <Widget>[
               Text('Total Coins: $coins', style: const TextStyle(fontSize: 24)),
               const SizedBox(height: 20),
-              Text('Set Pomodoro Timer ($timerDuration:00):'), // Updated to show current duration
               const SizedBox(height: 10),
               SleekCircularSlider(
                 initialValue: timerDuration.toDouble(), // Start at 10 minutes as a double
@@ -131,13 +132,7 @@ class _FirstPageState extends State<FirstPage> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Show the current timer value while sliding
-                      Text(
-                        '${value.toInt()}:00', // Display current value in minutes
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 10),
-                      // Place your image here
+                      // Only display the image here, remove timer display
                       Image.asset(
                         'images/tree.png', // Updated path to the image
                         fit: BoxFit.cover,
@@ -177,8 +172,20 @@ class _FirstPageState extends State<FirstPage> {
               ),
             ),
             ListTile(
+              title: const Text('Timer'),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                // Navigate back to the home page (FirstPage)
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FirstPage()),
+                );
+              },
+            ),
+            ListTile(
               title: const Text('Second Page'),
               onTap: () {
+                Navigator.pop(context); // Close the drawer
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SecondPage()),
@@ -188,6 +195,7 @@ class _FirstPageState extends State<FirstPage> {
             ListTile(
               title: const Text('Third Page'),
               onTap: () {
+                Navigator.pop(context); // Close the drawer
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ThirdPage()),
