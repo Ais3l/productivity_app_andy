@@ -15,15 +15,15 @@ class MyApp extends StatelessWidget {
       title: 'Productivity App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green, // Use a green seed color
-          primary: Colors.green, // Primary color
-          secondary: Colors.greenAccent, // Secondary color
-          surface: Colors.lightGreen, // Surface color
-          background: Colors.green[50], // Background color
+          seedColor: Colors.green,
+          primary: Colors.green,
+          secondary: Colors.greenAccent,
+          surface: Colors.lightGreen,
+          background: Colors.green[50],
         ),
         useMaterial3: true,
       ),
-      home: const FirstPage(), // Set FirstPage as the initial home
+      home: const FirstPage(),
     );
   }
 }
@@ -50,14 +50,12 @@ class _FirstPageState extends State<FirstPage> {
 
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (remainingTime <= 0) {
-        // Timer completed, increase coin count
         setState(() {
           coins += 10; // Increase coins by 10
           isTimerRunning = false;
           remainingTime = 0; // Reset remaining time
         });
         timer.cancel();
-        // Show a completion message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pomodoro completed! You earned 10 coins!')),
         );
@@ -89,62 +87,99 @@ class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Removed the AppBar to eliminate the "Pomodoro Timer" headline
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text('Total Coins: $coins', style: const TextStyle(fontSize: 24)),
-              const SizedBox(height: 20),
-              const SizedBox(height: 10),
-              SleekCircularSlider(
-                initialValue: timerDuration.toDouble(), // Start at 10 minutes as a double
-                min: 10,
-                max: 120,
-                onChange: (double value) {
-                  setState(() {
-                    timerDuration = value.toInt(); // Update timer duration
-                    remainingTime = timerDuration * 60; // Update remaining time for display
-                  });
-                },
-                appearance: CircularSliderAppearance(
-                  customColors: CustomSliderColors(
-                    dotColor: Colors.greenAccent,
-                    trackColor: Colors.green[100],
-                    progressBarColor: Colors.green,
-                  ),
-                  size: 250, // Size of the circular slider
-                ),
-                // Add an image inside the slider
-                innerWidget: (double value) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'images/tree.png', // Updated path to the image
-                        fit: BoxFit.cover,
-                        height: 100, // Adjust height as needed
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 20),
-              // Move the countdown timer display to the bottom
-              Text(
-                formattedTime,
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: isTimerRunning ? cancelTimer : startTimer,
-                child: Text(isTimerRunning ? 'Cancel Timer' : 'Start Timer'),
-              ),
-            ],
+      appBar: AppBar(
+        title: const Text('Pomodoro Timer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Add your settings action here if needed
+            },
           ),
-        ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Main content in the center
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const SizedBox(height: 20),
+                  SleekCircularSlider(
+                    initialValue: timerDuration.toDouble(),
+                    min: 10,
+                    max: 120,
+                    onChange: (double value) {
+                      setState(() {
+                        timerDuration = value.toInt();
+                        remainingTime = timerDuration * 60;
+                      });
+                    },
+                    appearance: CircularSliderAppearance(
+                      customColors: CustomSliderColors(
+                        dotColor: Colors.greenAccent,
+                        trackColor: Colors.green[100],
+                        progressBarColor: Colors.green,
+                      ),
+                      size: 250,
+                    ),
+                    innerWidget: (double value) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'images/tree.png',
+                            fit: BoxFit.cover,
+                            height: 100,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    formattedTime,
+                    style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: isTimerRunning ? cancelTimer : startTimer,
+                    child: Text(isTimerRunning ? 'Cancel Timer' : 'Start Timer'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Coin counter with image in the top-right corner
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.greenAccent.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'images/gold_coin.png', // Displays the gold coin image
+                    height: 24,
+                    width: 24,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Coins: $coins',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -163,8 +198,7 @@ class _FirstPageState extends State<FirstPage> {
             ListTile(
               title: const Text('Timer'),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
-                // Navigate back to the home page (FirstPage)
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const FirstPage()),
@@ -174,7 +208,7 @@ class _FirstPageState extends State<FirstPage> {
             ListTile(
               title: const Text('Second Page'),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SecondPage()),
@@ -184,7 +218,7 @@ class _FirstPageState extends State<FirstPage> {
             ListTile(
               title: const Text('Third Page'),
               onTap: () {
-                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ThirdPage()),
