@@ -89,17 +89,7 @@ class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pomodoro Timer'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Add your settings action here if needed
-            },
-          ),
-        ],
-      ),
+      // Removed the AppBar to eliminate the "Pomodoro Timer" headline
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -132,7 +122,6 @@ class _FirstPageState extends State<FirstPage> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Only display the image here, remove timer display
                       Image.asset(
                         'images/tree.png', // Updated path to the image
                         fit: BoxFit.cover,
