@@ -63,6 +63,7 @@ flutter:
   assets:
     - images/tree.png
     - images/gold_coin.png
+    - images/cherry.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

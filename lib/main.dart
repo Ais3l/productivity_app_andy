@@ -420,20 +420,134 @@ class _FirstPageState extends State<FirstPage> {
 
 // Trees Page //
 
-class TreesPage extends StatelessWidget {
+class TreesPage extends StatefulWidget {
   const TreesPage({super.key});
+
+  static const List<String> treeSpeciesNames = [
+    'Cerasus serrulata',
+    'Maple',
+    'Pine',
+    'Birch',
+    'Cedar',
+    'Willow',
+    'Cherry Blossom',
+    'Redwood',
+    'Magnolia',
+    'Palm',
+  ];
+
+  static const List<String> treeImages = [
+    'images/cherry.png',
+    'assets/tree_species_2.png',
+    'assets/tree_species_3.png',
+    'assets/tree_species_4.png',
+    'assets/tree_species_5.png',
+    'assets/tree_species_6.png',
+    'assets/tree_species_7.png',
+    'assets/tree_species_8.png',
+    'assets/tree_species_9.png',
+    'assets/tree_species_10.png',
+  ];
+
+  @override
+  _TreesPageState createState() => _TreesPageState();
+}
+
+class _TreesPageState extends State<TreesPage> {
+  final List<bool> _hovered = List.generate(TreesPage.treeSpeciesNames.length, (index) => false);
+
+  void _showSnackBar(BuildContext context, String treeName) {
+    final snackBar = SnackBar(
+      content: Text('You selected $treeName'),
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trees'),
+        title: const Text(''),
       ),
-      body: Center(
-        child: Text(
-          'This is the Trees page!',
-          style: TextStyle(fontSize: 24),
-        ),
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            child: const Text(
+              'Choose a Tree Species',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 5, // Display 5 boxes per row
+              childAspectRatio: 0.8, // Adjust for smaller boxes
+              padding: const EdgeInsets.all(8.0),
+              children: List.generate(TreesPage.treeSpeciesNames.length, (index) {
+                return MouseRegion(
+                  onEnter: (_) {
+                    setState(() {
+                      _hovered[index] = true;
+                    });
+                  },
+                  onExit: (_) {
+                    setState(() {
+                      _hovered[index] = false;
+                    });
+                  },
+                  child: Card(
+                    elevation: _hovered[index] ? 8 : 4,
+                    color: _hovered[index] ? Colors.green[200] : Colors.green[100],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        final treeName = TreesPage.treeSpeciesNames[index];
+                        _showSnackBar(context, treeName); // Show notification
+                      },
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: Image.asset(
+                                TreesPage.treeImages[index],
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 5,
+                            left: 5,
+                            child: Container(
+                              color: Colors.black54,
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                              child: Text(
+                                TreesPage.treeSpeciesNames[index],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
       ),
     );
   }
