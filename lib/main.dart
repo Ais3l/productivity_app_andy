@@ -201,14 +201,37 @@ class _FirstPageState extends State<FirstPage> {
                 Navigator.pop(context); // Close the drawer
               },
             ),
+
             ListTile(
               leading: const Icon(Icons.list),
               title: const Text('Tasks'),
               onTap: () {
                 // Navigate to your tasks page here
                 Navigator.pop(context); // Close the drawer
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const TasksPage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.0, 1.0); // Starting point of the animation (off screen)
+                      const end = Offset.zero; // Ending point (on screen)
+                      const curve = Curves.easeInOut; // Curve for the animation
+
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve)); // Tween for animation
+                      var offsetAnimation = animation.drive(tween); // Apply tween to the animation
+
+                      return SlideTransition(
+                        position: offsetAnimation,
+                        child: FadeTransition(
+                          opacity: animation, // Fade in effect
+                          child: child,
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
             ),
+
             ListTile(
               leading: const Icon(Icons.trending_up),
               title: const Text('Progress'),
@@ -549,6 +572,302 @@ class _TreesPageState extends State<TreesPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Tasks Page //
+
+// class TasksPage extends StatefulWidget {
+//   const TasksPage({super.key});
+
+//   @override
+//   _TasksPageState createState() => _TasksPageState();
+// }
+
+// class _TasksPageState extends State<TasksPage> {
+//   final List<Map<String, dynamic>> _tasks = []; // List to hold tasks with their completion status
+//   bool _isMicActive = false; // State variable for mic icon color
+
+//   void _addNewTask(String task) {
+//     setState(() {
+//       if (task.isNotEmpty) {
+//         _tasks.insert(0, {'text': task, 'isCompleted': false}); // Adds a new task with completion status
+//       }
+//     });
+//   }
+
+//   void _toggleTaskCompletion(int index) {
+//     setState(() {
+//       _tasks[index]['isCompleted'] = true; // Mark the task as completed
+//       Future.delayed(const Duration(milliseconds: 200), () {
+//         setState(() {
+//           _tasks.removeAt(index); // Remove task after clicking the check icon
+//         });
+//       });
+//     });
+//   }
+
+//   void _toggleMic() {
+//     setState(() {
+//       _isMicActive = !_isMicActive; // Toggle the mic icon state
+//     });
+//   }
+
+//   void _showAddTaskDialog() {
+//     final TextEditingController _taskController = TextEditingController(); // Local controller for dialog input
+
+//     showDialog(
+//       context: context,
+//       builder: (context) {
+//         return AlertDialog(
+//           title: const Text('Add New Task'),
+//           content: TextField(
+//             controller: _taskController,
+//             decoration: const InputDecoration(
+//               hintText: 'Enter a new task',
+//             ),
+//             onSubmitted: (value) {
+//               _addNewTask(value);
+//               Navigator.of(context).pop(); // Close the dialog after submission
+//             },
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () {
+//                 final task = _taskController.text;
+//                 _addNewTask(task);
+//                 Navigator.of(context).pop(); // Close the dialog after submission
+//               },
+//               child: const Text('Add'),
+//             ),
+//             TextButton(
+//               onPressed: () => Navigator.of(context).pop(), // Close the dialog without adding
+//               child: const Text('Cancel'),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Tasks'),
+//       ),
+//       body: Column(
+//         children: [
+//           // Display each task with a check icon
+//           Expanded(
+//             child: ListView.builder(
+//               itemCount: _tasks.length,
+//               itemBuilder: (context, index) {
+//                 final task = _tasks[index];
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//                   child: Row(
+//                     children: [
+//                       Expanded(
+//                         child: Text(
+//                           task['text'],
+//                           style: TextStyle(
+//                             decoration: task['isCompleted'] ? TextDecoration.lineThrough : null, // Strike through if completed
+//                           ),
+//                         ),
+//                       ),
+//                       IconButton(
+//                         icon: const Icon(Icons.check_circle, color: Colors.green), // Check icon
+//                         onPressed: task['isCompleted'] ? null : () => _toggleTaskCompletion(index), // Only allow if not completed
+//                       ),
+//                     ],
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//       floatingActionButton: Stack(
+//         alignment: Alignment.bottomCenter, // Align at the bottom center
+//         children: [
+//           Positioned(
+//             bottom: 60, // Adjust position above the button
+//             child: IconButton(
+//               icon: Icon(
+//                 Icons.mic,
+//                 size: 30,
+//                 color: _isMicActive ? Colors.red : Colors.green, // Change color based on state
+//               ),
+//               onPressed: _toggleMic, // Toggle mic icon state
+//             ),
+//           ),
+//           FloatingActionButton(
+//             onPressed: _showAddTaskDialog, // Show dialog to add a new task
+//             child: const Icon(Icons.add),
+//             backgroundColor: Colors.green,
+//           ),
+//         ],
+//       ),
+//       backgroundColor: Colors.green[100], // Match the home page color scheme
+//     );
+//   }
+// }
+
+class TasksPage extends StatefulWidget {
+  const TasksPage({super.key});
+
+  @override
+  _TasksPageState createState() => _TasksPageState();
+}
+
+class _TasksPageState extends State<TasksPage> {
+  final List<Map<String, dynamic>> _tasks = []; // List to hold tasks with their completion status
+  bool _isMicActive = false; // State variable for mic icon color
+
+  void _addNewTask(String task) {
+    setState(() {
+      if (task.isNotEmpty) {
+        _tasks.add({'text': task, 'isCompleted': false}); // Adds a new task to the end of the list
+      }
+    });
+  }
+
+  void _toggleTaskCompletion(int index) {
+    setState(() {
+      _tasks[index]['isCompleted'] = true; // Mark the task as completed
+      Future.delayed(const Duration(milliseconds: 200), () {
+        setState(() {
+          _tasks.removeAt(index); // Remove task after clicking the check icon
+        });
+      });
+    });
+  }
+
+  void _toggleMic() {
+    setState(() {
+      _isMicActive = !_isMicActive; // Toggle the mic icon state
+    });
+  }
+
+  void _showAddTaskDialog() {
+    final TextEditingController _taskController = TextEditingController(); // Local controller for dialog input
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add New Task'),
+          content: TextField(
+            controller: _taskController,
+            decoration: const InputDecoration(
+              hintText: 'Enter a new task',
+            ),
+            onSubmitted: (value) {
+              _addNewTask(value);
+              Navigator.of(context).pop(); // Close the dialog after submission
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                final task = _taskController.text;
+                _addNewTask(task);
+                Navigator.of(context).pop(); // Close the dialog after submission
+              },
+              child: const Text('Add'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Close the dialog without adding
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Tasks',
+          style: TextStyle(color: Colors.white), // Set the font color to white
+        ),
+        backgroundColor: Colors.green, // AppBar background color
+      ),
+      body: Column(
+        children: [
+          // Display each task with a check icon
+          Expanded(
+            child: ListView.builder(
+              itemCount: _tasks.length,
+              itemBuilder: (context, index) {
+                final task = _tasks[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12.0), // Padding inside the container
+                    decoration: BoxDecoration(
+                      color: Colors.white, // Background color of the task container
+                      borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2), // Shadow effect
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3), // Position of the shadow
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            task['text'],
+                            style: TextStyle(
+                              decoration: task['isCompleted'] ? TextDecoration.lineThrough : null, // Strike through if completed
+                              fontSize: 16.0, // Increase font size for better readability
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.check_circle, color: Colors.green), // Check icon
+                          onPressed: task['isCompleted'] ? null : () => _toggleTaskCompletion(index), // Only allow if not completed
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0), // Padding around the bottom navigation bar
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space between items
+          children: [
+            GestureDetector(
+              onTap: _toggleMic, // Toggle mic icon state
+              child: Icon(
+                Icons.mic,
+                size: 30,
+                color: _isMicActive ? Colors.red : Colors.green, // Change color based on state
+              ),
+            ),
+            FloatingActionButton(
+              onPressed: _showAddTaskDialog, // Show dialog to add a new task
+              child: const Icon(Icons.add),
+              backgroundColor: Colors.green,
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: Colors.green[100], // Match the home page color scheme
     );
   }
 }
