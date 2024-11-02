@@ -64,8 +64,15 @@ flutter:
     - images/tree.png
     - images/gold_coin.png
     - images/cherry.png
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+    - images/elm.png
+    - images/spruce.png
+    - images/mangrove.png
+    - images/dragon.png
+    - images/rainbow.png
+    - images/giant.png
+    - images/willow.png
+    - images/crab.png
+    - images/maple.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

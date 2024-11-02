@@ -425,28 +425,28 @@ class TreesPage extends StatefulWidget {
 
   static const List<String> treeSpeciesNames = [
     'Cerasus serrulata',
-    'Maple',
-    'Pine',
-    'Birch',
-    'Cedar',
-    'Willow',
-    'Cherry Blossom',
-    'Redwood',
-    'Magnolia',
-    'Palm',
+    'Ulmus',
+    'Picea',
+    'Rhizophora mangle L.',
+    'Dracaena draco',
+    'Eucalyptus deglupta',
+    'Sequoiadendron g.',
+    'Salix babylonica',
+    'Malus angustifolia',
+    'Acer palmatum',
   ];
 
   static const List<String> treeImages = [
     'images/cherry.png',
-    'assets/tree_species_2.png',
-    'assets/tree_species_3.png',
-    'assets/tree_species_4.png',
-    'assets/tree_species_5.png',
-    'assets/tree_species_6.png',
-    'assets/tree_species_7.png',
-    'assets/tree_species_8.png',
-    'assets/tree_species_9.png',
-    'assets/tree_species_10.png',
+    'images/elm.png',
+    'images/spruce.png',
+    'images/mangrove.png',
+    'images/dragon.png',
+    'images/rainbow.png',
+    'images/giant.png',
+    'images/willow.png',
+    'images/crab.png',
+    'images/maple.png',
   ];
 
   @override
