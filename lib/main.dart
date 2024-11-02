@@ -223,6 +223,27 @@ class _FirstPageState extends State<FirstPage> {
               title: const Text('Trees'),
               onTap: () {
                 Navigator.pop(context);
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const TreesPage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(0.0, 1.0); // Starting point of the animation (off screen)
+                      const end = Offset.zero; // Ending point (on screen)
+                      const curve = Curves.easeInOut; // Curve for the animation
+
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve)); // Tween for animation
+                      var offsetAnimation = animation.drive(tween); // Apply tween to the animation
+
+                      return SlideTransition(
+                        position: offsetAnimation,
+                        child: FadeTransition(
+                          opacity: animation, // Fade in effect
+                          child: child,
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
             ),
 
@@ -397,7 +418,7 @@ class _FirstPageState extends State<FirstPage> {
   } 
 }
 
-// Trees Page
+// Trees Page //
 
 class TreesPage extends StatelessWidget {
   const TreesPage({super.key});
