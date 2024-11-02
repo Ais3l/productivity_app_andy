@@ -44,6 +44,7 @@ class _FirstPageState extends State<FirstPage> {
   int remainingTime = 0; // Time remaining in seconds
   int breakTimeSeconds = 0; // Break time counter
   Timer? breakTimer; // Timer for break time
+  bool showBreakTime = false; // Flag to control visibility of break time
 
   @override
   void initState() {
@@ -57,6 +58,7 @@ class _FirstPageState extends State<FirstPage> {
       remainingTime = timerDuration; // Reset remaining time to timerDuration when starting
       isBreakActive = false; // Ensure break is not active
       breakTimeSeconds = 0; // Reset break time counter
+      showBreakTime = false; // Hide break time initially
     });
 
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
@@ -66,6 +68,7 @@ class _FirstPageState extends State<FirstPage> {
           isTimerRunning = false;
           remainingTime = 0; // Reset remaining time
           isBreakActive = true; // Activate break timer
+          showBreakTime = true; // Show break time
         });
         timer.cancel();
       } else {
@@ -85,6 +88,18 @@ class _FirstPageState extends State<FirstPage> {
         remainingTime = timerDuration; // Reset remaining time to 10 seconds
       });
     }
+  }
+
+  void goBackToTimer() {
+    setState(() {
+      isTimerRunning = false;
+      remainingTime = timerDuration; // Reset remaining time to timerDuration
+      showBreakTime = false; // Hide break time when going back to timer
+    });
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const FirstPage()), // Navigate to the default home page
+    );
   }
 
   void startBreakTimer() {
@@ -167,6 +182,11 @@ class _FirstPageState extends State<FirstPage> {
                         remainingTime = timerDuration; // Update remaining time in seconds
                       });
                     },
+                    onChangeEnd: (double value) {
+                      if (!isTimerRunning && remainingTime == 0) {
+                        goBackToTimer(); // Trigger go back to timer when slider is adjusted after timer ends
+                      }
+                    },
                     appearance: CircularSliderAppearance(
                       customColors: CustomSliderColors(
                         dotColor: Colors.greenAccent,
@@ -185,12 +205,16 @@ class _FirstPageState extends State<FirstPage> {
                             height: 100,
                           ),
                           const SizedBox(height: 8), // Add space between the image and stopwatch
-                          if (isBreakActive) // Display break time when break is active
-                            Text(
-                              'Break Time: $formattedBreakTime',
-                              style: const TextStyle(
-                                fontSize: 16, // Smaller font size for break stopwatch
-                                fontWeight: FontWeight.bold,
+                          if (showBreakTime) // Display break time when flag is true
+                            AnimatedOpacity(
+                              opacity: showBreakTime ? 1.0 : 0.0, // Control opacity for fade effect
+                              duration: const Duration(milliseconds: 500), // Fade duration
+                              child: Text(
+                                'Break Time: $formattedBreakTime',
+                                style: const TextStyle(
+                                  fontSize: 16, // Smaller font size for break stopwatch
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                         ],
@@ -199,7 +223,7 @@ class _FirstPageState extends State<FirstPage> {
                   ),
                   const SizedBox(height: 20),
                   // Display the selected timer duration
-                  if (!isBreakActive) // Only show selected time when break is not active
+                  if (!showBreakTime) // Only show selected time when break is not active
                     AnimatedOpacity(
                       opacity: isTimerRunning ? 0.0 : 1.0, // Fade out when timer starts
                       duration: const Duration(milliseconds: 500), // Set fade animation duration
@@ -216,16 +240,7 @@ class _FirstPageState extends State<FirstPage> {
                   const SizedBox(height: 20),
                   if (remainingTime == 0) // Show "Go Back to Timer" button when the timer ends
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          isTimerRunning = false;
-                          remainingTime = timerDuration; // Reset remaining time to timerDuration
-                        });
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const FirstPage()), // Navigate to the default home page
-                        );
-                      },
+                      onPressed: goBackToTimer,
                       child: const Text('Go Back to Timer'),
                     )
                   else // Show "Start Timer" or "Cancel Timer" based on timer state
@@ -269,9 +284,11 @@ class _FirstPageState extends State<FirstPage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.green),
-              child: const Text(
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.green,
+              ),
+              child: Text(
                 'Navigation',
                 style: TextStyle(
                   color: Colors.white,
@@ -280,33 +297,17 @@ class _FirstPageState extends State<FirstPage> {
               ),
             ),
             ListTile(
-              title: const Text('Timer'),
+              title: const Text('Task List'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FirstPage()),
-                );
+                // Implement navigation to the task list page
               },
             ),
             ListTile(
-              title: const Text('Second Page'),
+              title: const Text('Overview'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SecondPage()),
-                );
-              },
-            ),
-            ListTile(
-              title: const Text('Third Page'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ThirdPage()),
-                );
+                // Implement navigation to the overview page
               },
             ),
           ],
@@ -314,33 +315,12 @@ class _FirstPageState extends State<FirstPage> {
       ),
     );
   }
-}
-
-class SecondPage extends StatelessWidget {
-  const SecondPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Overview')),
-      body: Center(
-        child: const Text('This is the Overview page.'),
-      ),
-    );
-  }
-}
-
-class ThirdPage extends StatelessWidget {
-  const ThirdPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Task List')),
-      body: Center(
-        child: const Text('This is the Task List page.'),
-      ),
-    );
+  void dispose() {
+    timer.cancel();
+    breakTimer?.cancel(); // Cancel break timer when disposing
+    super.dispose();
   }
 }
 
