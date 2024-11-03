@@ -91,10 +91,7 @@ class _FirstPageState extends State<FirstPage> {
       showBreakTime = false; // Hide break time when going back to timer
       showBackToTimerButton = false; // Hide back to timer button when going back
     });
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const FirstPage()), // Navigate to the default home page
-    );
+      MaterialPageRoute(builder: (context) => const FirstPage()); // Navigate to the default home page
   }
 
   void startBreakTimer() {
