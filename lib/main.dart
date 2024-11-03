@@ -447,16 +447,16 @@ class TreesPage extends StatefulWidget {
   const TreesPage({super.key});
 
   static const List<String> treeSpeciesNames = [
-    'Cerasus serrulata',
-    'Ulmus',
-    'Picea',
-    'Rhizophora mangle L.',
-    'Dracaena draco',
-    'Eucalyptus deglupta',
+    'Cerasus s.',
+    'Ulmus m.',
+    'Picea s.',
+    'Rhizophora m.',
+    'Dracaena d.',
+    'Eucalyptus d.',
     'Sequoiadendron g.',
-    'Salix babylonica',
-    'Malus angustifolia',
-    'Acer palmatum',
+    'Salix b.',
+    'Malus a.',
+    'Acer p.',
   ];
 
   static const List<String> treeImages = [
@@ -612,6 +612,13 @@ class _TasksPageState extends State<TasksPage> {
     setState(() {
       _isMicActive = !_isMicActive; // Toggle the mic icon state
     });
+    // Show snackbar when mic is clicked
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('How can AI help you with planning today?'),
+        duration: const Duration(seconds: 5), // Snackbar duration
+      ),
+    );
   }
 
   void _showAddTaskDialog() {
@@ -737,3 +744,4 @@ class _TasksPageState extends State<TasksPage> {
 }
 
 // end
+
