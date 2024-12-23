@@ -369,27 +369,23 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  final List<Map<String, dynamic>> _tasks =
-      []; // List to hold tasks with their completion status
-  bool _isMicActive = false; // State variable for mic icon color
+  final List<Map<String, dynamic>> _tasks = [];
+  bool _isMicActive = false;
 
   void _addNewTask(String task) {
     setState(() {
       if (task.isNotEmpty) {
-        _tasks.add({
-          'text': task,
-          'isCompleted': false
-        }); // Adds a new task to the end of the list
+        _tasks.add({'text': task, 'isCompleted': false});
       }
     });
   }
 
   void _toggleTaskCompletion(int index) {
     setState(() {
-      _tasks[index]['isCompleted'] = true; // Mark the task as completed
+      _tasks[index]['isCompleted'] = true;
       Future.delayed(const Duration(milliseconds: 200), () {
         setState(() {
-          _tasks.removeAt(index); // Remove task after clicking the check icon
+          _tasks.removeAt(index);
         });
       });
     });
@@ -397,20 +393,18 @@ class _TasksPageState extends State<TasksPage> {
 
   void _toggleMic() {
     setState(() {
-      _isMicActive = !_isMicActive; // Toggle the mic icon state
+      _isMicActive = !_isMicActive;
     });
-    // Show snackbar when mic is clicked
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('How can AI help you with planning today?'),
-        duration: Duration(seconds: 5), // Snackbar duration
+        duration: Duration(seconds: 5),
       ),
     );
   }
 
   void _showAddTaskDialog() {
-    final TextEditingController taskController =
-        TextEditingController(); // Local controller for dialog input
+    final TextEditingController taskController = TextEditingController();
 
     showDialog(
       context: context,
@@ -424,7 +418,7 @@ class _TasksPageState extends State<TasksPage> {
             ),
             onSubmitted: (value) {
               _addNewTask(value);
-              Navigator.of(context).pop(); // Close the dialog after submission
+              Navigator.of(context).pop();
             },
           ),
           actions: [
@@ -432,14 +426,12 @@ class _TasksPageState extends State<TasksPage> {
               onPressed: () {
                 final task = taskController.text;
                 _addNewTask(task);
-                Navigator.of(context)
-                    .pop(); // Close the dialog after submission
+                Navigator.of(context).pop();
               },
               child: const Text('Add'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context)
-                  .pop(), // Close the dialog without adding
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
           ],
@@ -462,7 +454,6 @@ class _TasksPageState extends State<TasksPage> {
       ),
       body: Column(
         children: [
-          // Display each task with a check icon
           Expanded(
             child: ListView.builder(
               itemCount: _tasks.length,
@@ -472,19 +463,16 @@ class _TasksPageState extends State<TasksPage> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 8.0),
                   child: Container(
-                    padding: const EdgeInsets.all(
-                        12.0), // Padding inside the container
+                    padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
-                      color: Colors
-                          .white, // Background color of the task container
-                      borderRadius:
-                          BorderRadius.circular(8.0), // Rounded corners
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.2), // Shadow effect
+                          color: Colors.grey.withOpacity(0.2),
                           spreadRadius: 2,
                           blurRadius: 5,
-                          offset: const Offset(0, 3), // Position of the shadow
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -496,19 +484,17 @@ class _TasksPageState extends State<TasksPage> {
                             style: TextStyle(
                               decoration: task['isCompleted']
                                   ? TextDecoration.lineThrough
-                                  : null, // Strike through if completed
-                              fontSize:
-                                  16.0, // Increase font size for better readability
+                                  : null,
+                              fontSize: 16.0,
                             ),
                           ),
                         ),
                         IconButton(
                           icon: const Icon(Icons.check_circle,
-                              color: Colors.green), // Check icon
+                              color: Colors.green),
                           onPressed: task['isCompleted']
                               ? null
-                              : () => _toggleTaskCompletion(
-                                  index), // Only allow if not completed
+                              : () => _toggleTaskCompletion(index),
                         ),
                       ],
                     ),
@@ -520,33 +506,27 @@ class _TasksPageState extends State<TasksPage> {
         ],
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(
-            16.0), // Padding around the bottom navigation bar
+        padding: const EdgeInsets.all(16.0),
         child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween, // Distribute space between items
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             FloatingActionButton(
-              onPressed: _toggleMic, // Toggle mic icon state
+              onPressed: _toggleMic,
               backgroundColor: Colors.green,
               child: Icon(
                 Icons.mic,
                 size: 30,
-                color: _isMicActive
-                    ? Colors.red
-                    : Colors.white, // Change color based on state
+                color: _isMicActive ? Colors.red : Colors.white,
               ),
             ),
             FloatingActionButton(
-              onPressed: _showAddTaskDialog, // Show dialog to add a new task
+              onPressed: _showAddTaskDialog,
               backgroundColor: Colors.green,
-              child: const Icon(Icons.add,
-                  color: Colors.white), // Set the plus icon color to white
+              child: const Icon(Icons.add, color: Colors.white),
             ),
           ],
         ),
       ),
-      backgroundColor: Colors.green[100], // Match the home page color scheme
     );
   }
 }
@@ -730,176 +710,191 @@ class _TimerContentState extends State<TimerContent> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF87C4B4),
-        actions: [
-          // Song selection icon
-          IconButton(
-            icon: const Icon(Icons.playlist_play),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Select Music'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Nintendo Music'),
-                          onTap: () async {
-                            await _changeTrack('music/nintendo.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Chill Music'),
-                          onTap: () async {
-                            await _changeTrack('music/chillguy.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Rain Sounds'),
-                          onTap: () async {
-                            await _changeTrack('music/rain.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Minecraft Music'),
-                          onTap: () async {
-                            await _changeTrack('music/minecraft.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          // Mute/unmute icon
-          IconButton(
-            icon: Icon(
-              _isMuted ? Icons.volume_off : Icons.volume_up,
-              color: _isMusicPlaying ? Colors.green : Colors.white,
-            ),
-            onPressed: _toggleMute,
-          ),
-        ],
+        title: Image.asset(
+          'assets/fglogo.png',
+          height: 50,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFB9EDDD),
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (!showBreakTime) ...[
-              SleekCircularSlider(
-                appearance: CircularSliderAppearance(
-                  size: 200,
-                  customColors: CustomSliderColors(
-                    progressBarColor: Colors.green,
-                    trackColor: Colors.green[100],
-                    shadowColor: Colors.green[200],
-                  ),
-                  startAngle: 180,
-                  angleRange: 180,
-                  customWidths: CustomSliderWidths(
-                    progressBarWidth: 20,
-                    trackWidth: 20,
-                    shadowWidth: 22,
-                  ),
-                ),
-                min: 0,
-                max: 60,
-                initialValue: isTimerRunning
-                    ? (remainingTime / 60).toDouble()
-                    : (remainingTime / 60).floor().toDouble(),
-                onChange: !isTimerRunning
-                    ? (double value) {
-                        setState(() {
-                          timerDuration = (value.round() * 60);
-                          remainingTime = timerDuration;
-                        });
-                      }
-                    : null,
-                innerWidget: (double value) {
-                  if (isTimerRunning) {
-                    final minutes = (remainingTime / 60).floor();
-                    final seconds = (remainingTime % 60).floor();
-                    return Center(
-                      child: Text(
-                        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontSize: 48),
-                      ),
-                    );
-                  } else {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${value.round()} min',
-                            style: const TextStyle(fontSize: 48),
-                          ),
-                          const Text(
-                            'Drag to set minutes',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (!isTimerRunning)
-                    ElevatedButton(
-                      onPressed: startTimer,
-                      child: const Text('Start Timer'),
+                  IconButton(
+                    icon: const Icon(Icons.playlist_play, color: Colors.white),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Select Music'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.music_note),
+                                  title: const Text('Nintendo Music'),
+                                  onTap: () async {
+                                    await _changeTrack('music/nintendo.mp3');
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.music_note),
+                                  title: const Text('Chill Music'),
+                                  onTap: () async {
+                                    await _changeTrack('music/chillguy.mp3');
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.music_note),
+                                  title: const Text('Rain Sounds'),
+                                  onTap: () async {
+                                    await _changeTrack('music/rain.mp3');
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.music_note),
+                                  title: const Text('Minecraft Music'),
+                                  onTap: () async {
+                                    await _changeTrack('music/minecraft.mp3');
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _isMuted ? Icons.volume_off : Icons.volume_up,
+                      color: _isMusicPlaying ? Colors.green : Colors.white,
                     ),
-                  if (isTimerRunning)
-                    ElevatedButton(
-                      onPressed: abortTimer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Abort Timer'),
-                    ),
+                    onPressed: _toggleMute,
+                  ),
                 ],
               ),
-            ],
-            // Break time display
-            if (showBreakTime) ...[
-              const Text(
-                'Break Time',
-                style: TextStyle(fontSize: 24),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SleekCircularSlider(
+                    appearance: CircularSliderAppearance(
+                      size: 200,
+                      customColors: CustomSliderColors(
+                        progressBarColor: Colors.green,
+                        trackColor: Colors.green[100],
+                        shadowColor: Colors.green[200],
+                      ),
+                      startAngle: 180,
+                      angleRange: 180,
+                      customWidths: CustomSliderWidths(
+                        progressBarWidth: 20,
+                        trackWidth: 20,
+                        shadowWidth: 22,
+                      ),
+                    ),
+                    min: 0,
+                    max: 60,
+                    initialValue: isTimerRunning
+                        ? (remainingTime / 60).toDouble()
+                        : (remainingTime / 60).floor().toDouble(),
+                    onChange: !isTimerRunning
+                        ? (double value) {
+                            setState(() {
+                              timerDuration = (value.round() * 60);
+                              remainingTime = timerDuration;
+                            });
+                          }
+                        : null,
+                    innerWidget: (double value) {
+                      if (isTimerRunning) {
+                        final minutes = (remainingTime / 60).floor();
+                        final seconds = (remainingTime % 60).floor();
+                        return Center(
+                          child: Text(
+                            '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 48),
+                          ),
+                        );
+                      } else {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${value.round()} min',
+                                style: const TextStyle(fontSize: 48),
+                              ),
+                              const Text(
+                                'Drag to set minutes',
+                                style:
+                                    TextStyle(fontSize: 14, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!isTimerRunning)
+                        ElevatedButton(
+                          onPressed: startTimer,
+                          child: const Text('Start Timer'),
+                        ),
+                      if (isTimerRunning)
+                        ElevatedButton(
+                          onPressed: abortTimer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Abort Timer'),
+                        ),
+                    ],
+                  ),
+                  // Break time display
+                  if (showBreakTime) ...[
+                    const Text(
+                      'Break Time',
+                      style: TextStyle(fontSize: 24),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Time elapsed: ${formattedBreakTime}s',
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 20),
+                    if (showBackToTimerButton)
+                      ElevatedButton(
+                        onPressed: goBackToTimer,
+                        child: const Text('Back to Timer'),
+                      ),
+                  ],
+                  // Coins display
+                  const SizedBox(height: 20),
+                  Text(
+                    'Coins: $coins',
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Time elapsed: ${formattedBreakTime}s',
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              if (showBackToTimerButton)
-                ElevatedButton(
-                  onPressed: goBackToTimer,
-                  child: const Text('Back to Timer'),
-                ),
-            ],
-            // Coins display
-            const SizedBox(height: 20),
-            Text(
-              'Coins: $coins',
-              style: const TextStyle(fontSize: 20),
             ),
           ],
         ),
