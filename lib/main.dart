@@ -703,6 +703,17 @@ class _TimerContentState extends State<TimerContent> {
     return '$breakTimeSeconds';
   }
 
+  void goBackToTimer() {
+    setState(() {
+      isTimerRunning = false;
+      remainingTime = timerDuration;
+      showBreakTime = false;
+      showBackToTimerButton = false;
+      isBreakActive = false;
+      breakTimeSeconds = 0;
+    });
+  }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
