@@ -3,10 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-<<<<<<< HEAD
-=======
   audioplayers_windows
->>>>>>> master
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
