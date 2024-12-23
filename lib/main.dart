@@ -730,12 +730,6 @@ class _TimerContentState extends State<TimerContent> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset(
-          'assets/fglogo.png',
-          height: 50,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
         backgroundColor: const Color(0xFF87C4B4),
         actions: [
           // Song selection icon
