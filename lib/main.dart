@@ -572,20 +572,14 @@ class _TimerContentState extends State<TimerContent> {
   bool showBackToTimerButton = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isMusicPlaying = false;
-  String currentTrack = 'assets/music/nintendo.mp3'; // Default track
+  bool _isMuted = false;
+  String currentTrack = 'music/nintendo.mp3';
 
   @override
   void initState() {
     super.initState();
     remainingTime = timerDuration;
-    _audioPlayer.setReleaseMode(ReleaseMode.loop); // Music will loop
-  }
-
-  void setTimerDuration(int minutes) {
-    setState(() {
-      timerDuration = minutes * 60; // Convert minutes to seconds
-      remainingTime = timerDuration;
-    });
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
   }
 
   void startTimer() {
@@ -603,6 +597,7 @@ class _TimerContentState extends State<TimerContent> {
       _audioPlayer.play(AssetSource(currentTrack));
       setState(() {
         _isMusicPlaying = true;
+        _isMuted = false;
       });
     } catch (e) {
       print('Error playing audio: $e');
@@ -619,7 +614,6 @@ class _TimerContentState extends State<TimerContent> {
           showBackToTimerButton = true;
         });
         timer.cancel();
-        // Stop music when timer completes
         _audioPlayer.stop();
         setState(() {
           _isMusicPlaying = false;
@@ -632,13 +626,53 @@ class _TimerContentState extends State<TimerContent> {
     });
   }
 
-  void goBackToTimer() {
-    setState(() {
-      isTimerRunning = false;
-      remainingTime = timerDuration;
-      showBreakTime = false;
-      showBackToTimerButton = false;
-    });
+  void abortTimer() async {
+    if (isTimerRunning) {
+      int timeSpent = timerDuration - remainingTime;
+      int minutesSpent = (timeSpent / 60).ceil();
+
+      timer.cancel();
+      await _audioPlayer.stop();
+
+      setState(() {
+        _isMusicPlaying = false;
+        coins += minutesSpent;
+        isTimerRunning = false;
+        remainingTime = timerDuration;
+        isBreakActive = false;
+        breakTimeSeconds = 0;
+        showBreakTime = false;
+        showBackToTimerButton = false;
+      });
+    }
+  }
+
+  Future<void> _changeTrack(String newTrack) async {
+    try {
+      currentTrack = newTrack;
+      if (_isMusicPlaying) {
+        await _audioPlayer.stop();
+        await _audioPlayer.play(AssetSource(currentTrack));
+      }
+    } catch (e) {
+      print('Error changing track: $e');
+    }
+  }
+
+  void _toggleMute() async {
+    try {
+      setState(() {
+        _isMuted = !_isMuted;
+      });
+
+      if (_isMuted) {
+        await _audioPlayer.setVolume(0);
+      } else {
+        await _audioPlayer.setVolume(1);
+      }
+    } catch (e) {
+      print('Error toggling mute: $e');
+    }
   }
 
   void startBreakTimer() {
@@ -669,27 +703,12 @@ class _TimerContentState extends State<TimerContent> {
     return '$breakTimeSeconds';
   }
 
-  void abortTimer() async {
-    if (isTimerRunning) {
-      int timeSpent = timerDuration - remainingTime;
-      int minutesSpent = (timeSpent / 60).ceil();
-
-      timer.cancel();
-
-      // Stop the music completely
-      await _audioPlayer.stop();
-
-      setState(() {
-        _isMusicPlaying = false;
-        coins += minutesSpent;
-        isTimerRunning = false;
-        remainingTime = timerDuration;
-        isBreakActive = false;
-        breakTimeSeconds = 0;
-        showBreakTime = false;
-        showBackToTimerButton = false;
-      });
-    }
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    timer.cancel();
+    breakTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -708,34 +727,64 @@ class _TimerContentState extends State<TimerContent> {
         centerTitle: true,
         backgroundColor: const Color(0xFF87C4B4),
         actions: [
-          PopupMenuButton<String>(
+          // Song selection icon
+          IconButton(
+            icon: const Icon(Icons.playlist_play),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Select Music'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.music_note),
+                          title: const Text('Nintendo Music'),
+                          onTap: () async {
+                            await _changeTrack('music/nintendo.mp3');
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.music_note),
+                          title: const Text('Chill Music'),
+                          onTap: () async {
+                            await _changeTrack('music/chillguy.mp3');
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.music_note),
+                          title: const Text('Rain Sounds'),
+                          onTap: () async {
+                            await _changeTrack('music/rain.mp3');
+                            Navigator.pop(context);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.music_note),
+                          title: const Text('Minecraft Music'),
+                          onTap: () async {
+                            await _changeTrack('music/minecraft.mp3');
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          // Mute/unmute icon
+          IconButton(
             icon: Icon(
-              _isMusicPlaying ? Icons.music_note : Icons.music_off,
+              _isMuted ? Icons.volume_off : Icons.volume_up,
               color: _isMusicPlaying ? Colors.green : Colors.white,
             ),
-            onSelected: (String track) {
-              setState(() {
-                currentTrack = track;
-              });
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'music/nintendo.mp3',
-                child: Text('Nintendo Music'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'music/chillguy.mp3',
-                child: Text('Chill Music'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'music/rain.mp3',
-                child: Text('Rain Sounds'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'music/minecraft.mp3',
-                child: Text('Minecraft Music'),
-              ),
-            ],
+            onPressed: _toggleMute,
           ),
         ],
       ),
@@ -851,15 +900,6 @@ class _TimerContentState extends State<TimerContent> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.stop();
-    _audioPlayer.dispose();
-    timer.cancel();
-    breakTimer?.cancel();
-    super.dispose();
   }
 }
 
