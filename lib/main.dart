@@ -856,42 +856,57 @@ class _TimerContentState extends State<TimerContent> {
             ),
           ),
         ),
+        // Weather Display Widget - Smaller and Top-Left Positioned
+        Positioned(
+          top: 16,
+          left: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF87C4B4),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isLoadingWeather)
+                  const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (_currentWeather != null) ...[
+                  Text(
+                    '${_currentWeather!.description} | ${_currentWeather!.temperature.toStringAsFixed(1)}°C',
+                    style: TextStyle(
+                      color: Colors.grey[700], // Same as music icon color
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ] else
+                  Text(
+                    'Weather unavailable',
+                    style: TextStyle(
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
         // Timer content
         Center(
           child: Column(
             children: [
-              // Weather Card
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  color: const Color(0xFF87C4B4),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        if (_isLoadingWeather)
-                          const CircularProgressIndicator()
-                        else if (_currentWeather != null) ...[
-                          Text(
-                            'Weather: ${_currentWeather!.description}',
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            'Temperature: ${_currentWeather!.temperature.toStringAsFixed(1)} °C',
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
               // Existing timer content
               Padding(
                 padding: const EdgeInsets.all(8.0),
