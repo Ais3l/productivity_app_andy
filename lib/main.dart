@@ -5,12 +5,17 @@ import 'package:productivity_app_andy/progressPage.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:productivity_app_andy/splashScreen.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
+import 'package:productivity_app_andy/providers/task_provider.dart';
 
 void main() {
   runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
+    ChangeNotifierProvider(
+      create: (context) => TaskProvider(),
+      child: DevicePreview(
+        enabled: true,
+        builder: (context) => const MyApp(),
+      ),
     ),
   );
 }
@@ -90,17 +95,29 @@ class _FirstPageState extends State<FirstPage> {
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (remainingTime <= 0) {
         setState(() {
-          coins += 10; // Increase coins by 10
+          coins += 10;
           isTimerRunning = false;
-          remainingTime = 0; // Reset remaining time
-          isBreakActive = true; // Activate break timer
-          showBreakTime = true; // Show break time
-          showBackToTimerButton = true; // Show back to timer button
+          remainingTime = 0;
+          isBreakActive = true;
+          showBreakTime = true;
+          showBackToTimerButton = true;
         });
+
+        // Add task when timer completes
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.addTask(Task(
+          id: DateTime.now().toString(),
+          title: "Focus Session",
+          createdAt: DateTime.now(),
+          focusTime: Duration(seconds: timerDuration),
+          treesPlanted: 1,
+          isCompleted: true,
+        ));
+
         timer.cancel();
       } else {
         setState(() {
-          remainingTime--; // Decrease remaining time
+          remainingTime--;
         });
       }
     });
@@ -593,6 +610,18 @@ class _TimerContentState extends State<TimerContent> {
           showBreakTime = true;
           showBackToTimerButton = true;
         });
+
+        // Add this block to create a task when timer completes
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.addTask(Task(
+          id: DateTime.now().toString(),
+          title: "Focus Session",
+          createdAt: DateTime.now(),
+          focusTime: Duration(seconds: timerDuration),
+          treesPlanted: 1,
+          isCompleted: true,
+        ));
+
         timer.cancel();
         _audioPlayer.stop();
         setState(() {
