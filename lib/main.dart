@@ -208,19 +208,11 @@ class _FirstPageState extends State<FirstPage> {
       appBar: AppBar(
         title: Image.asset(
           'assets/fglogo.png',
-          height: 50,
+          height: 120,
           fit: BoxFit.contain,
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF87C4B4),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Add your settings action here if needed
-            },
-          ),
-        ],
       ),
       body: _pages[_selectedIndex], // Display the selected page
       bottomNavigationBar: BottomNavigationBar(
@@ -363,7 +355,7 @@ class _TreesPageState extends State<TreesPage> {
       appBar: AppBar(
         title: Image.asset(
           'assets/fglogo.png',
-          height: 50,
+          height: 80,
           fit: BoxFit.contain,
         ),
         centerTitle: true,
@@ -598,7 +590,7 @@ class _TasksPageState extends State<TasksPage> {
       appBar: AppBar(
         title: Image.asset(
           'assets/fglogo.png',
-          height: 50,
+          height: 80,
           fit: BoxFit.contain,
         ),
         centerTitle: true,
