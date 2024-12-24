@@ -5,12 +5,23 @@ import 'package:productivity_app_andy/progressPage.dart';
 import 'package:device_preview/device_preview.dart';
 import 'package:productivity_app_andy/splashScreen.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
+import 'package:productivity_app_andy/providers/task_provider.dart';
+import 'package:productivity_app_andy/providers/tree_provider.dart';
+import 'package:productivity_app_andy/providers/coins_provider.dart';
 
 void main() {
   runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => const MyApp(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TaskProvider()),
+        ChangeNotifierProvider(create: (context) => TreeProvider()),
+        ChangeNotifierProvider(create: (context) => CoinsProvider()),
+      ],
+      child: DevicePreview(
+        enabled: true,
+        builder: (context) => const MyApp(),
+      ),
     ),
   );
 }
@@ -51,7 +62,6 @@ class FirstPage extends StatefulWidget {
 }
 
 class _FirstPageState extends State<FirstPage> {
-  int coins = 0;
   int timerDuration = 10; // Default to 10 seconds
   bool isTimerRunning = false;
   bool isBreakActive = false;
@@ -62,6 +72,7 @@ class _FirstPageState extends State<FirstPage> {
   bool showBreakTime = false; // Flag to control visibility of break time
   bool showBackToTimerButton = false; // Flag for the back to timer button
   int _selectedIndex = 0;
+  int _selectedTreeIndex = 0;
   final List<Widget> _pages = [
     const TimerContent(), // We'll create this widget to hold the timer content
     const TasksPage(),
@@ -90,17 +101,52 @@ class _FirstPageState extends State<FirstPage> {
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (remainingTime <= 0) {
         setState(() {
-          coins += 10; // Increase coins by 10
           isTimerRunning = false;
-          remainingTime = 0; // Reset remaining time
-          isBreakActive = true; // Activate break timer
-          showBreakTime = true; // Show break time
-          showBackToTimerButton = true; // Show back to timer button
+          remainingTime = timerDuration;
         });
+
+        // Calculate coins based on minutes (10 coins per minute)
+        final minutesCompleted =
+            timerDuration ~/ 60; // Convert seconds to minutes
+        final coinsEarned = minutesCompleted * 10;
+
+        // Add coins when timer completes
+        final coinsProvider =
+            Provider.of<CoinsProvider>(context, listen: false);
+        coinsProvider.addCoins(coinsEarned);
+
+        // Add task when timer completes
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.addTask(Task(
+          id: DateTime.now().toString(),
+          title: "Focus Session",
+          createdAt: DateTime.now(),
+          focusTime: Duration(seconds: timerDuration),
+          treesPlanted: 1,
+          isCompleted: true,
+        ));
+
+        // Show completion dialog with coins earned
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Session Complete!'),
+              content: Text('Good job! You earned $coinsEarned coins!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+
         timer.cancel();
       } else {
         setState(() {
-          remainingTime--; // Decrease remaining time
+          remainingTime--;
         });
       }
     });
@@ -162,19 +208,11 @@ class _FirstPageState extends State<FirstPage> {
       appBar: AppBar(
         title: Image.asset(
           'assets/fglogo.png',
-          height: 50,
+          height: 120,
           fit: BoxFit.contain,
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF87C4B4),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Add your settings action here if needed
-            },
-          ),
-        ],
       ),
       body: _pages[_selectedIndex], // Display the selected page
       bottomNavigationBar: BottomNavigationBar(
@@ -220,7 +258,7 @@ class TreesPage extends StatefulWidget {
   const TreesPage({super.key});
 
   static const List<String> treeSpeciesNames = [
-    'Cerasus s.',
+    'Cerasus s.', // Default unlocked
     'Ulmus m.',
     'Picea s.',
     'Rhizophora m.',
@@ -250,46 +288,104 @@ class TreesPage extends StatefulWidget {
 }
 
 class _TreesPageState extends State<TreesPage> {
+  int _selectedTreeIndex = 0;
   final List<bool> _hovered =
       List.generate(TreesPage.treeSpeciesNames.length, (index) => false);
+  final List<bool> _unlockedTrees = List.generate(
+      TreesPage.treeSpeciesNames.length,
+      (index) => index == 0); // First tree unlocked
+  static const int treeCost = 10;
 
-  void _showSnackBar(BuildContext context, String treeName) {
-    final snackBar = SnackBar(
-      content: Text('You selected $treeName'),
-      duration: const Duration(seconds: 2),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  void _purchaseTree(BuildContext context, int index) {
+    if (_unlockedTrees[index]) return; // Already unlocked
+
+    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
+    if (coinsProvider.coins >= treeCost) {
+      // Show confirmation dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Confirm Purchase'),
+            content: Text(
+                'Do you want to purchase ${TreesPage.treeSpeciesNames[index]}?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    coinsProvider.spendCoins(treeCost);
+                    _unlockedTrees[index] = true;
+                  });
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          '${TreesPage.treeSpeciesNames[index]} unlocked!'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: const Text('Purchase'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not enough coins! Need 10 coins to unlock.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Image.asset(
-          'assets/fglogo.png',
-          height: 50,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF87C4B4),
-      ),
-      body: Column(
+    final treeProvider = Provider.of<TreeProvider>(context);
+    final selectedTreeIndex = treeProvider.selectedTreeIndex;
+    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
+
+    return Center(
+      child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16.0),
-            child: const Text(
-              'Choose a Tree Species',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Choose a Tree Species',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Coins: ${coinsProvider.coins}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
             child: GridView.count(
-              crossAxisCount: 5, // Display 5 boxes per row
-              childAspectRatio: 0.8, // Adjust for smaller boxes
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
               padding: const EdgeInsets.all(8.0),
               children:
                   List.generate(TreesPage.treeSpeciesNames.length, (index) {
@@ -306,15 +402,26 @@ class _TreesPageState extends State<TreesPage> {
                   },
                   child: Card(
                     elevation: _hovered[index] ? 8 : 4,
-                    color:
-                        _hovered[index] ? Colors.green[200] : Colors.green[100],
+                    color: _unlockedTrees[index]
+                        ? (index == _selectedTreeIndex || _hovered[index]
+                            ? Colors.green[200]
+                            : Colors.green[100])
+                        : Colors.grey[300],
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: InkWell(
                       onTap: () {
-                        final treeName = TreesPage.treeSpeciesNames[index];
-                        _showSnackBar(context, treeName); // Show notification
+                        if (_unlockedTrees[index]) {
+                          final treeProvider =
+                              Provider.of<TreeProvider>(context, listen: false);
+                          treeProvider.setSelectedTree(index);
+                          setState(() {
+                            _selectedTreeIndex = index;
+                          });
+                        } else {
+                          _purchaseTree(context, index);
+                        }
                       },
                       child: Stack(
                         children: [
@@ -322,9 +429,20 @@ class _TreesPageState extends State<TreesPage> {
                             borderRadius: BorderRadius.circular(12),
                             child: AspectRatio(
                               aspectRatio: 1,
-                              child: Image.asset(
-                                TreesPage.treeImages[index],
-                                fit: BoxFit.contain,
+                              child: ColorFiltered(
+                                colorFilter: _unlockedTrees[index]
+                                    ? const ColorFilter.mode(
+                                        Colors.transparent,
+                                        BlendMode.saturation,
+                                      )
+                                    : const ColorFilter.mode(
+                                        Colors.grey,
+                                        BlendMode.saturation,
+                                      ),
+                                child: Image.asset(
+                                  TreesPage.treeImages[index],
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                           ),
@@ -336,7 +454,9 @@ class _TreesPageState extends State<TreesPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 4.0, vertical: 2.0),
                               child: Text(
-                                TreesPage.treeSpeciesNames[index],
+                                _unlockedTrees[index]
+                                    ? TreesPage.treeSpeciesNames[index]
+                                    : '${TreesPage.treeSpeciesNames[index]} (10 coins)',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -369,27 +489,35 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  final List<Map<String, dynamic>> _tasks =
-      []; // List to hold tasks with their completion status
-  bool _isMicActive = false; // State variable for mic icon color
+  final List<Map<String, dynamic>> _tasks = [];
+  bool _isMicActive = false;
 
   void _addNewTask(String task) {
     setState(() {
       if (task.isNotEmpty) {
-        _tasks.add({
-          'text': task,
-          'isCompleted': false
-        }); // Adds a new task to the end of the list
+        _tasks.add({'text': task, 'isCompleted': false});
       }
     });
   }
 
   void _toggleTaskCompletion(int index) {
+    final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final task = Task(
+      id: DateTime.now().toString(),
+      title: _tasks[index]['text'],
+      createdAt: DateTime.now(),
+      focusTime: const Duration(minutes: 0), // or actual time if you track it
+      treesPlanted: 1,
+      isCompleted: true,
+    );
+
+    taskProvider.addTask(task);
+
     setState(() {
-      _tasks[index]['isCompleted'] = true; // Mark the task as completed
+      _tasks[index]['isCompleted'] = true;
       Future.delayed(const Duration(milliseconds: 200), () {
         setState(() {
-          _tasks.removeAt(index); // Remove task after clicking the check icon
+          _tasks.removeAt(index);
         });
       });
     });
@@ -397,20 +525,18 @@ class _TasksPageState extends State<TasksPage> {
 
   void _toggleMic() {
     setState(() {
-      _isMicActive = !_isMicActive; // Toggle the mic icon state
+      _isMicActive = !_isMicActive;
     });
-    // Show snackbar when mic is clicked
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('How can AI help you with planning today?'),
-        duration: Duration(seconds: 5), // Snackbar duration
+        duration: Duration(seconds: 5),
       ),
     );
   }
 
   void _showAddTaskDialog() {
-    final TextEditingController taskController =
-        TextEditingController(); // Local controller for dialog input
+    final TextEditingController taskController = TextEditingController();
 
     showDialog(
       context: context,
@@ -424,7 +550,7 @@ class _TasksPageState extends State<TasksPage> {
             ),
             onSubmitted: (value) {
               _addNewTask(value);
-              Navigator.of(context).pop(); // Close the dialog after submission
+              Navigator.of(context).pop();
             },
           ),
           actions: [
@@ -432,14 +558,12 @@ class _TasksPageState extends State<TasksPage> {
               onPressed: () {
                 final task = taskController.text;
                 _addNewTask(task);
-                Navigator.of(context)
-                    .pop(); // Close the dialog after submission
+                Navigator.of(context).pop();
               },
               child: const Text('Add'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context)
-                  .pop(), // Close the dialog without adding
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
           ],
@@ -450,103 +574,80 @@ class _TasksPageState extends State<TasksPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Image.asset(
-          'assets/fglogo.png',
-          height: 50,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF87C4B4),
-      ),
-      body: Column(
-        children: [
-          // Display each task with a check icon
-          Expanded(
-            child: ListView.builder(
-              itemCount: _tasks.length,
-              itemBuilder: (context, index) {
-                final task = _tasks[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(
-                        12.0), // Padding inside the container
-                    decoration: BoxDecoration(
-                      color: Colors
-                          .white, // Background color of the task container
-                      borderRadius:
-                          BorderRadius.circular(8.0), // Rounded corners
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2), // Shadow effect
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3), // Position of the shadow
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            task['text'],
-                            style: TextStyle(
-                              decoration: task['isCompleted']
-                                  ? TextDecoration.lineThrough
-                                  : null, // Strike through if completed
-                              fontSize:
-                                  16.0, // Increase font size for better readability
-                            ),
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: _tasks.length,
+            itemBuilder: (context, index) {
+              final task = _tasks[index];
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task['text'],
+                          style: TextStyle(
+                            decoration: task['isCompleted']
+                                ? TextDecoration.lineThrough
+                                : null,
+                            fontSize: 16.0,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.check_circle,
-                              color: Colors.green), // Check icon
-                          onPressed: task['isCompleted']
-                              ? null
-                              : () => _toggleTaskCompletion(
-                                  index), // Only allow if not completed
-                        ),
-                      ],
-                    ),
+                      ),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.check_circle, color: Colors.green),
+                        onPressed: task['isCompleted']
+                            ? null
+                            : () => _toggleTaskCompletion(index),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-        ],
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(
-            16.0), // Padding around the bottom navigation bar
-        child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween, // Distribute space between items
-          children: [
-            FloatingActionButton(
-              onPressed: _toggleMic, // Toggle mic icon state
-              backgroundColor: Colors.green,
-              child: Icon(
-                Icons.mic,
-                size: 30,
-                color: _isMicActive
-                    ? Colors.red
-                    : Colors.white, // Change color based on state
-              ),
-            ),
-            FloatingActionButton(
-              onPressed: _showAddTaskDialog, // Show dialog to add a new task
-              backgroundColor: Colors.green,
-              child: const Icon(Icons.add,
-                  color: Colors.white), // Set the plus icon color to white
-            ),
-          ],
         ),
-      ),
-      backgroundColor: Colors.green[100], // Match the home page color scheme
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              FloatingActionButton(
+                onPressed: _toggleMic,
+                backgroundColor: Colors.green,
+                child: Icon(
+                  Icons.mic,
+                  size: 30,
+                  color: _isMicActive ? Colors.red : Colors.white,
+                ),
+              ),
+              FloatingActionButton(
+                onPressed: _showAddTaskDialog,
+                backgroundColor: Colors.green,
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -560,16 +661,10 @@ class TimerContent extends StatefulWidget {
 }
 
 class _TimerContentState extends State<TimerContent> {
-  int coins = 0;
   int timerDuration = 600; // Changed to seconds (10 minutes default)
   bool isTimerRunning = false;
-  bool isBreakActive = false;
   late Timer timer;
   int remainingTime = 0;
-  int breakTimeSeconds = 0;
-  Timer? breakTimer;
-  bool showBreakTime = false;
-  bool showBackToTimerButton = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isMusicPlaying = false;
   bool _isMuted = false;
@@ -586,10 +681,6 @@ class _TimerContentState extends State<TimerContent> {
     setState(() {
       isTimerRunning = true;
       remainingTime = timerDuration;
-      isBreakActive = false;
-      breakTimeSeconds = 0;
-      showBreakTime = false;
-      showBackToTimerButton = false;
     });
 
     // Start playing music when timer starts
@@ -606,13 +697,48 @@ class _TimerContentState extends State<TimerContent> {
     timer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (remainingTime <= 0) {
         setState(() {
-          coins += 10;
           isTimerRunning = false;
-          remainingTime = 0;
-          isBreakActive = true;
-          showBreakTime = true;
-          showBackToTimerButton = true;
+          remainingTime = timerDuration;
         });
+
+        // Calculate coins based on minutes (10 coins per minute)
+        final minutesCompleted =
+            timerDuration ~/ 60; // Convert seconds to minutes
+        final coinsEarned = minutesCompleted * 10;
+
+        // Add coins when timer completes
+        final coinsProvider =
+            Provider.of<CoinsProvider>(context, listen: false);
+        coinsProvider.addCoins(coinsEarned);
+
+        // Add task when timer completes
+        final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+        taskProvider.addTask(Task(
+          id: DateTime.now().toString(),
+          title: "Focus Session",
+          createdAt: DateTime.now(),
+          focusTime: Duration(seconds: timerDuration),
+          treesPlanted: 1,
+          isCompleted: true,
+        ));
+
+        // Show completion dialog with coins earned
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Session Complete!'),
+              content: Text('Good job! You earned $coinsEarned coins!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+
         timer.cancel();
         _audioPlayer.stop();
         setState(() {
@@ -636,13 +762,8 @@ class _TimerContentState extends State<TimerContent> {
 
       setState(() {
         _isMusicPlaying = false;
-        coins += minutesSpent;
         isTimerRunning = false;
         remainingTime = timerDuration;
-        isBreakActive = false;
-        breakTimeSeconds = 0;
-        showBreakTime = false;
-        showBackToTimerButton = false;
       });
     }
   }
@@ -675,21 +796,6 @@ class _TimerContentState extends State<TimerContent> {
     }
   }
 
-  void startBreakTimer() {
-    if (isBreakActive && breakTimer == null) {
-      breakTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
-        if (!isBreakActive) {
-          timer.cancel();
-          breakTimer = null;
-        } else {
-          setState(() {
-            breakTimeSeconds++;
-          });
-        }
-      });
-    }
-  }
-
   String get formattedTime {
     if (remainingTime == 0) {
       return '';
@@ -699,18 +805,10 @@ class _TimerContentState extends State<TimerContent> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  String get formattedBreakTime {
-    return '$breakTimeSeconds';
-  }
-
   void goBackToTimer() {
     setState(() {
       isTimerRunning = false;
       remainingTime = timerDuration;
-      showBreakTime = false;
-      showBackToTimerButton = false;
-      isBreakActive = false;
-      breakTimeSeconds = 0;
     });
   }
 
@@ -718,192 +816,201 @@ class _TimerContentState extends State<TimerContent> {
   void dispose() {
     _audioPlayer.dispose();
     timer.cancel();
-    breakTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isBreakActive) {
-      startBreakTimer();
-    }
+    final treeProvider = Provider.of<TreeProvider>(context);
+    final selectedTreeIndex = treeProvider.selectedTreeIndex;
+    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF87C4B4),
-        actions: [
-          // Song selection icon
-          IconButton(
-            icon: const Icon(Icons.playlist_play),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Select Music'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
+    // Calculate opacity based on remaining time
+    double treeOpacity = isTimerRunning
+        ? 0.2 +
+            (0.8 *
+                (1 -
+                    remainingTime /
+                        timerDuration)) // Starts at 0.2, ends at 1.0
+        : 0.2; // Default opacity when timer is not running
+
+    return Stack(
+      children: [
+        // Background Tree Image
+        Positioned.fill(
+          child: Opacity(
+            opacity: treeOpacity,
+            child: Image.asset(
+              TreesPage.treeImages[selectedTreeIndex],
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        // Your existing timer content
+        Center(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.playlist_play, color: Colors.grey),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Select Music'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.music_note),
+                                    title: const Text('Nintendo Music'),
+                                    onTap: () async {
+                                      await _changeTrack('music/nintendo.mp3');
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.music_note),
+                                    title: const Text('Chill Music'),
+                                    onTap: () async {
+                                      await _changeTrack('music/chillguy.mp3');
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.music_note),
+                                    title: const Text('Rain Sounds'),
+                                    onTap: () async {
+                                      await _changeTrack('music/rain.mp3');
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.music_note),
+                                    title: const Text('Minecraft Music'),
+                                    onTap: () async {
+                                      await _changeTrack('music/minecraft.mp3');
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isMuted ? Icons.volume_off : Icons.volume_up,
+                        color: _isMusicPlaying ? Colors.green : Colors.grey,
+                      ),
+                      onPressed: _toggleMute,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SleekCircularSlider(
+                      appearance: CircularSliderAppearance(
+                        size: 200,
+                        customColors: CustomSliderColors(
+                          progressBarColor: Colors.green,
+                          trackColor: Colors.green[100],
+                          shadowColor: Colors.green[200],
+                        ),
+                        startAngle: 180,
+                        angleRange: 180,
+                        customWidths: CustomSliderWidths(
+                          progressBarWidth: 20,
+                          trackWidth: 20,
+                          shadowWidth: 22,
+                        ),
+                      ),
+                      min: 0,
+                      max: 60,
+                      initialValue: isTimerRunning
+                          ? (remainingTime / 60).toDouble()
+                          : (remainingTime / 60).floor().toDouble(),
+                      onChange: !isTimerRunning
+                          ? (double value) {
+                              setState(() {
+                                timerDuration = (value.round() * 60);
+                                remainingTime = timerDuration;
+                              });
+                            }
+                          : null,
+                      innerWidget: (double value) {
+                        if (isTimerRunning) {
+                          final minutes = (remainingTime / 60).floor();
+                          final seconds = (remainingTime % 60).floor();
+                          return Center(
+                            child: Text(
+                              '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                              style: const TextStyle(fontSize: 48),
+                            ),
+                          );
+                        } else {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${value.round()} min',
+                                  style: const TextStyle(fontSize: 48),
+                                ),
+                                Text(
+                                  'Drag to set minutes',
+                                  style: TextStyle(
+                                      fontSize: 14, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Nintendo Music'),
-                          onTap: () async {
-                            await _changeTrack('music/nintendo.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Chill Music'),
-                          onTap: () async {
-                            await _changeTrack('music/chillguy.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Rain Sounds'),
-                          onTap: () async {
-                            await _changeTrack('music/rain.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.music_note),
-                          title: const Text('Minecraft Music'),
-                          onTap: () async {
-                            await _changeTrack('music/minecraft.mp3');
-                            Navigator.pop(context);
-                          },
-                        ),
+                        if (!isTimerRunning)
+                          ElevatedButton(
+                            onPressed: startTimer,
+                            child: const Text('Start Timer'),
+                          ),
+                        if (isTimerRunning)
+                          ElevatedButton(
+                            onPressed: abortTimer,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Abort Timer'),
+                          ),
                       ],
                     ),
-                  );
-                },
-              );
-            },
-          ),
-          // Mute/unmute icon
-          IconButton(
-            icon: Icon(
-              _isMuted ? Icons.volume_off : Icons.volume_up,
-              color: _isMusicPlaying ? Colors.green : Colors.white,
-            ),
-            onPressed: _toggleMute,
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!showBreakTime) ...[
-              SleekCircularSlider(
-                appearance: CircularSliderAppearance(
-                  size: 200,
-                  customColors: CustomSliderColors(
-                    progressBarColor: Colors.green,
-                    trackColor: Colors.green[100],
-                    shadowColor: Colors.green[200],
-                  ),
-                  startAngle: 180,
-                  angleRange: 180,
-                  customWidths: CustomSliderWidths(
-                    progressBarWidth: 20,
-                    trackWidth: 20,
-                    shadowWidth: 22,
-                  ),
+                    // Coins display
+                    const SizedBox(height: 20),
+                    Text(
+                      'Coins: ${coinsProvider.coins}',
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ],
                 ),
-                min: 0,
-                max: 60,
-                initialValue: isTimerRunning
-                    ? (remainingTime / 60).toDouble()
-                    : (remainingTime / 60).floor().toDouble(),
-                onChange: !isTimerRunning
-                    ? (double value) {
-                        setState(() {
-                          timerDuration = (value.round() * 60);
-                          remainingTime = timerDuration;
-                        });
-                      }
-                    : null,
-                innerWidget: (double value) {
-                  if (isTimerRunning) {
-                    final minutes = (remainingTime / 60).floor();
-                    final seconds = (remainingTime % 60).floor();
-                    return Center(
-                      child: Text(
-                        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontSize: 48),
-                      ),
-                    );
-                  } else {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${value.round()} min',
-                            style: const TextStyle(fontSize: 48),
-                          ),
-                          const Text(
-                            'Drag to set minutes',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (!isTimerRunning)
-                    ElevatedButton(
-                      onPressed: startTimer,
-                      child: const Text('Start Timer'),
-                    ),
-                  if (isTimerRunning)
-                    ElevatedButton(
-                      onPressed: abortTimer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Abort Timer'),
-                    ),
-                ],
               ),
             ],
-            // Break time display
-            if (showBreakTime) ...[
-              const Text(
-                'Break Time',
-                style: TextStyle(fontSize: 24),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Time elapsed: ${formattedBreakTime}s',
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 20),
-              if (showBackToTimerButton)
-                ElevatedButton(
-                  onPressed: goBackToTimer,
-                  child: const Text('Back to Timer'),
-                ),
-            ],
-            // Coins display
-            const SizedBox(height: 20),
-            Text(
-              'Coins: $coins',
-              style: const TextStyle(fontSize: 20),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
