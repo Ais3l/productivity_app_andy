@@ -351,141 +351,129 @@ class _TreesPageState extends State<TreesPage> {
     final selectedTreeIndex = treeProvider.selectedTreeIndex;
     final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Image.asset(
-          'assets/fglogo.png',
-          height: 80,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF87C4B4),
-      ),
-      body: Center(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      'Choose a Tree Species',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Coins: ${coinsProvider.coins}',
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Choose a Tree Species',
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Coins: ${coinsProvider.coins}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                childAspectRatio: 0.8,
-                padding: const EdgeInsets.all(8.0),
-                children:
-                    List.generate(TreesPage.treeSpeciesNames.length, (index) {
-                  return MouseRegion(
-                    onEnter: (_) {
-                      setState(() {
-                        _hovered[index] = true;
-                      });
-                    },
-                    onExit: (_) {
-                      setState(() {
-                        _hovered[index] = false;
-                      });
-                    },
-                    child: Card(
-                      elevation: _hovered[index] ? 8 : 4,
-                      color: _unlockedTrees[index]
-                          ? (index == _selectedTreeIndex || _hovered[index]
-                              ? Colors.green[200]
-                              : Colors.green[100])
-                          : Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          if (_unlockedTrees[index]) {
-                            final treeProvider = Provider.of<TreeProvider>(
-                                context,
-                                listen: false);
-                            treeProvider.setSelectedTree(index);
-                            setState(() {
-                              _selectedTreeIndex = index;
-                            });
-                          } else {
-                            _purchaseTree(context, index);
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: ColorFiltered(
-                                  colorFilter: _unlockedTrees[index]
-                                      ? const ColorFilter.mode(
-                                          Colors.transparent,
-                                          BlendMode.saturation,
-                                        )
-                                      : const ColorFilter.mode(
-                                          Colors.grey,
-                                          BlendMode.saturation,
-                                        ),
-                                  child: Image.asset(
-                                    TreesPage.treeImages[index],
-                                    fit: BoxFit.contain,
-                                  ),
+          ),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
+              padding: const EdgeInsets.all(8.0),
+              children:
+                  List.generate(TreesPage.treeSpeciesNames.length, (index) {
+                return MouseRegion(
+                  onEnter: (_) {
+                    setState(() {
+                      _hovered[index] = true;
+                    });
+                  },
+                  onExit: (_) {
+                    setState(() {
+                      _hovered[index] = false;
+                    });
+                  },
+                  child: Card(
+                    elevation: _hovered[index] ? 8 : 4,
+                    color: _unlockedTrees[index]
+                        ? (index == _selectedTreeIndex || _hovered[index]
+                            ? Colors.green[200]
+                            : Colors.green[100])
+                        : Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        if (_unlockedTrees[index]) {
+                          final treeProvider =
+                              Provider.of<TreeProvider>(context, listen: false);
+                          treeProvider.setSelectedTree(index);
+                          setState(() {
+                            _selectedTreeIndex = index;
+                          });
+                        } else {
+                          _purchaseTree(context, index);
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: ColorFiltered(
+                                colorFilter: _unlockedTrees[index]
+                                    ? const ColorFilter.mode(
+                                        Colors.transparent,
+                                        BlendMode.saturation,
+                                      )
+                                    : const ColorFilter.mode(
+                                        Colors.grey,
+                                        BlendMode.saturation,
+                                      ),
+                                child: Image.asset(
+                                  TreesPage.treeImages[index],
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ),
-                            Positioned(
-                              bottom: 5,
-                              left: 5,
-                              child: Container(
-                                color: Colors.black54,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 4.0, vertical: 2.0),
-                                child: Text(
-                                  _unlockedTrees[index]
-                                      ? TreesPage.treeSpeciesNames[index]
-                                      : '${TreesPage.treeSpeciesNames[index]} (10 coins)',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          ),
+                          Positioned(
+                            bottom: 5,
+                            left: 5,
+                            child: Container(
+                              color: Colors.black54,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4.0, vertical: 2.0),
+                              child: Text(
+                                _unlockedTrees[index]
+                                    ? TreesPage.treeSpeciesNames[index]
+                                    : '${TreesPage.treeSpeciesNames[index]} (10 coins)',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }),
-              ),
+                  ),
+                );
+              }),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -586,91 +574,80 @@ class _TasksPageState extends State<TasksPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Image.asset(
-          'assets/fglogo.png',
-          height: 80,
-          fit: BoxFit.contain,
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF87C4B4),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: _tasks.length,
-              itemBuilder: (context, index) {
-                final task = _tasks[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            task['text'],
-                            style: TextStyle(
-                              decoration: task['isCompleted']
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                              fontSize: 16.0,
-                            ),
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: _tasks.length,
+            itemBuilder: (context, index) {
+              final task = _tasks[index];
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task['text'],
+                          style: TextStyle(
+                            decoration: task['isCompleted']
+                                ? TextDecoration.lineThrough
+                                : null,
+                            fontSize: 16.0,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.check_circle,
-                              color: Colors.green),
-                          onPressed: task['isCompleted']
-                              ? null
-                              : () => _toggleTaskCompletion(index),
-                        ),
-                      ],
-                    ),
+                      ),
+                      IconButton(
+                        icon:
+                            const Icon(Icons.check_circle, color: Colors.green),
+                        onPressed: task['isCompleted']
+                            ? null
+                            : () => _toggleTaskCompletion(index),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-        ],
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            FloatingActionButton(
-              onPressed: _toggleMic,
-              backgroundColor: Colors.green,
-              child: Icon(
-                Icons.mic,
-                size: 30,
-                color: _isMicActive ? Colors.red : Colors.white,
-              ),
-            ),
-            FloatingActionButton(
-              onPressed: _showAddTaskDialog,
-              backgroundColor: Colors.green,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          ],
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              FloatingActionButton(
+                onPressed: _toggleMic,
+                backgroundColor: Colors.green,
+                child: Icon(
+                  Icons.mic,
+                  size: 30,
+                  color: _isMicActive ? Colors.red : Colors.white,
+                ),
+              ),
+              FloatingActionButton(
+                onPressed: _showAddTaskDialog,
+                backgroundColor: Colors.green,
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -879,8 +856,7 @@ class _TimerContentState extends State<TimerContent> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon:
-                          const Icon(Icons.playlist_play, color: Colors.white),
+                      icon: const Icon(Icons.playlist_play, color: Colors.grey),
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -932,7 +908,7 @@ class _TimerContentState extends State<TimerContent> {
                     IconButton(
                       icon: Icon(
                         _isMuted ? Icons.volume_off : Icons.volume_up,
-                        color: _isMusicPlaying ? Colors.green : Colors.white,
+                        color: _isMusicPlaying ? Colors.green : Colors.grey,
                       ),
                       onPressed: _toggleMute,
                     ),
@@ -991,7 +967,7 @@ class _TimerContentState extends State<TimerContent> {
                                   '${value.round()} min',
                                   style: const TextStyle(fontSize: 48),
                                 ),
-                                const Text(
+                                Text(
                                   'Drag to set minutes',
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.grey),
