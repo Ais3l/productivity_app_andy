@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async'; // Import for using Timer
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:productivity_app_andy/progressPage.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:productivity_app_andy/splashScreen.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
@@ -18,10 +17,7 @@ void main() {
         ChangeNotifierProvider(create: (context) => TreeProvider()),
         ChangeNotifierProvider(create: (context) => CoinsProvider()),
       ],
-      child: DevicePreview(
-        enabled: true,
-        builder: (context) => const MyApp(),
-      ),
+      child: const MyApp(),
     ),
   );
 }
@@ -32,9 +28,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      useInheritedMediaQuery: true,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       title: '',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -115,6 +108,9 @@ class _FirstPageState extends State<FirstPage> {
             Provider.of<CoinsProvider>(context, listen: false);
         coinsProvider.addCoins(coinsEarned);
 
+        // Increment trees planted
+        coinsProvider.plantTree(); // This only increments trees planted
+
         // Add task when timer completes
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         taskProvider.addTask(Task(
@@ -122,11 +118,12 @@ class _FirstPageState extends State<FirstPage> {
           title: "Focus Session",
           createdAt: DateTime.now(),
           focusTime: Duration(seconds: timerDuration),
-          treesPlanted: 1,
-          isCompleted: true,
+          treesPlanted: 1, // This can be adjusted based on your logic
+          isCompleted:
+              true, // Ensure this is set to true only when a task is completed
         ));
 
-        // Show completion dialog with coins earned
+        // Show completion dialog
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -296,60 +293,11 @@ class _TreesPageState extends State<TreesPage> {
       (index) => index == 0); // First tree unlocked
   static const int treeCost = 10;
 
-  void _purchaseTree(BuildContext context, int index) {
-    if (_unlockedTrees[index]) return; // Already unlocked
-
-    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
-    if (coinsProvider.coins >= treeCost) {
-      // Show confirmation dialog
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Confirm Purchase'),
-            content: Text(
-                'Do you want to purchase ${TreesPage.treeSpeciesNames[index]}?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    coinsProvider.spendCoins(treeCost);
-                    _unlockedTrees[index] = true;
-                  });
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          '${TreesPage.treeSpeciesNames[index]} unlocked!'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: const Text('Purchase'),
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough coins! Need 10 coins to unlock.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final coinsProvider = Provider.of<CoinsProvider>(context);
     final treeProvider = Provider.of<TreeProvider>(context);
-    final selectedTreeIndex = treeProvider.selectedTreeIndex;
-    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
+    final unlockedTrees = treeProvider.unlockedTrees;
 
     return Center(
       child: Column(
@@ -389,84 +337,70 @@ class _TreesPageState extends State<TreesPage> {
               padding: const EdgeInsets.all(8.0),
               children:
                   List.generate(TreesPage.treeSpeciesNames.length, (index) {
-                return MouseRegion(
-                  onEnter: (_) {
-                    setState(() {
-                      _hovered[index] = true;
-                    });
-                  },
-                  onExit: (_) {
-                    setState(() {
-                      _hovered[index] = false;
-                    });
-                  },
-                  child: Card(
-                    elevation: _hovered[index] ? 8 : 4,
-                    color: _unlockedTrees[index]
-                        ? (index == _selectedTreeIndex || _hovered[index]
-                            ? Colors.green[200]
-                            : Colors.green[100])
-                        : Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        if (_unlockedTrees[index]) {
-                          final treeProvider =
-                              Provider.of<TreeProvider>(context, listen: false);
-                          treeProvider.setSelectedTree(index);
-                          setState(() {
-                            _selectedTreeIndex = index;
-                          });
-                        } else {
-                          _purchaseTree(context, index);
-                        }
-                      },
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: ColorFiltered(
-                                colorFilter: _unlockedTrees[index]
-                                    ? const ColorFilter.mode(
-                                        Colors.transparent,
-                                        BlendMode.saturation,
-                                      )
-                                    : const ColorFilter.mode(
-                                        Colors.grey,
-                                        BlendMode.saturation,
-                                      ),
-                                child: Image.asset(
-                                  TreesPage.treeImages[index],
-                                  fit: BoxFit.contain,
-                                ),
+                return Card(
+                  elevation: unlockedTrees[index] ? 8 : 4,
+                  color: unlockedTrees[index]
+                      ? Colors.green[200]
+                      : Colors.grey[300],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      if (unlockedTrees[index]) {
+                        final treeProvider =
+                            Provider.of<TreeProvider>(context, listen: false);
+                        treeProvider.setSelectedTree(index);
+                        setState(() {
+                          _selectedTreeIndex = index;
+                        });
+                      } else {
+                        _purchaseTree(context, index);
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: ColorFiltered(
+                              colorFilter: unlockedTrees[index]
+                                  ? const ColorFilter.mode(
+                                      Colors.transparent,
+                                      BlendMode.saturation,
+                                    )
+                                  : const ColorFilter.mode(
+                                      Colors.grey,
+                                      BlendMode.saturation,
+                                    ),
+                              child: Image.asset(
+                                TreesPage.treeImages[index],
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: 5,
-                            left: 5,
-                            child: Container(
-                              color: Colors.black54,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4.0, vertical: 2.0),
-                              child: Text(
-                                _unlockedTrees[index]
-                                    ? TreesPage.treeSpeciesNames[index]
-                                    : '${TreesPage.treeSpeciesNames[index]} (10 coins)',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        ),
+                        Positioned(
+                          bottom: 5,
+                          left: 5,
+                          child: Container(
+                            color: Colors.black54,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4.0, vertical: 2.0),
+                            child: Text(
+                              unlockedTrees[index]
+                                  ? TreesPage.treeSpeciesNames[index]
+                                  : '${TreesPage.treeSpeciesNames[index]} (10 coins)',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -476,6 +410,53 @@ class _TreesPageState extends State<TreesPage> {
         ],
       ),
     );
+  }
+
+  void _purchaseTree(BuildContext context, int index) {
+    final coinsProvider = Provider.of<CoinsProvider>(context, listen: false);
+    final treeProvider = Provider.of<TreeProvider>(context, listen: false);
+
+    if (!treeProvider.unlockedTrees[index] && coinsProvider.coins >= treeCost) {
+      // Show confirmation dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Confirm Purchase'),
+            content: Text(
+                'Do you want to purchase ${TreesPage.treeSpeciesNames[index]}?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  coinsProvider.spendCoins(treeCost);
+                  treeProvider.unlockTree(index); // Unlock the tree
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          '${TreesPage.treeSpeciesNames[index]} unlocked!'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: const Text('Purchase'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Not enough coins! Need 10 coins to unlock.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 }
 
@@ -711,6 +692,9 @@ class _TimerContentState extends State<TimerContent> {
             Provider.of<CoinsProvider>(context, listen: false);
         coinsProvider.addCoins(coinsEarned);
 
+        // Increment trees planted
+        coinsProvider.plantTree(); // This only increments trees planted
+
         // Add task when timer completes
         final taskProvider = Provider.of<TaskProvider>(context, listen: false);
         taskProvider.addTask(Task(
@@ -718,11 +702,12 @@ class _TimerContentState extends State<TimerContent> {
           title: "Focus Session",
           createdAt: DateTime.now(),
           focusTime: Duration(seconds: timerDuration),
-          treesPlanted: 1,
-          isCompleted: true,
+          treesPlanted: 1, // This can be adjusted based on your logic
+          isCompleted:
+              true, // Ensure this is set to true only when a task is completed
         ));
 
-        // Show completion dialog with coins earned
+        // Show completion dialog
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -846,10 +831,11 @@ class _TimerContentState extends State<TimerContent> {
             ),
           ),
         ),
-        // Your existing timer content
+        // Timer content
         Center(
           child: Column(
             children: [
+              // Existing timer content
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(

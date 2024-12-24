@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:productivity_app_andy/providers/task_provider.dart';
+import 'package:productivity_app_andy/providers/coins_provider.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -18,6 +19,7 @@ class _ProgressPageState extends State<ProgressPage> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
+    final coinsProvider = Provider.of<CoinsProvider>(context);
 
     // Calculate today's stats
     final todayStats = _calculateDailyStats(taskProvider.todaysTasks);
@@ -46,7 +48,7 @@ class _ProgressPageState extends State<ProgressPage> {
               _buildStatItem(Icons.timer, 'Focus Time',
                   _formatDuration(todayStats.totalFocusTime)),
               _buildStatItem(Icons.nature, 'Trees Planted',
-                  todayStats.treesPlanted.toString()),
+                  coinsProvider.treesPlanted.toString()),
               _buildStatItem(Icons.task_alt, 'Tasks Completed',
                   todayStats.tasksCompleted.toString()),
             ],
@@ -61,7 +63,7 @@ class _ProgressPageState extends State<ProgressPage> {
               _buildStatItem(Icons.timer, 'Total Focus Time',
                   _formatDuration(weeklyStats.totalFocusTime)),
               _buildStatItem(Icons.nature, 'Total Trees',
-                  weeklyStats.treesPlanted.toString()),
+                  coinsProvider.treesPlanted.toString()),
               _buildStatItem(Icons.trending_up, 'Completion Rate',
                   '${weeklyStats.completionRate.toStringAsFixed(1)}%'),
             ],

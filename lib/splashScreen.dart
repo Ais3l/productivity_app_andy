@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Changed from 3 to 7 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const FirstPage()),
