@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:productivity_app_andy/providers/task_provider.dart';
 import 'package:productivity_app_andy/providers/tree_provider.dart';
 import 'package:productivity_app_andy/providers/coins_provider.dart';
+import 'services/weather_service.dart';
+import 'models/weather.dart';
 
 void main() {
   runApp(
@@ -650,12 +652,35 @@ class _TimerContentState extends State<TimerContent> {
   bool _isMusicPlaying = false;
   bool _isMuted = false;
   String currentTrack = 'music/nintendo.mp3';
+  Weather? _currentWeather;
+  bool _isLoadingWeather = false;
 
   @override
   void initState() {
     super.initState();
     remainingTime = timerDuration;
     _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    _fetchWeather(); // Fetch weather data on initialization
+  }
+
+  Future<void> _fetchWeather() async {
+    setState(() {
+      _isLoadingWeather = true;
+    });
+
+    try {
+      final weather =
+          await WeatherService.getWeather(); // No city passed, uses default
+      setState(() {
+        _currentWeather = weather;
+        _isLoadingWeather = false;
+      });
+    } catch (e) {
+      print('Error fetching weather: $e');
+      setState(() {
+        _isLoadingWeather = false;
+      });
+    }
   }
 
   void startTimer() {
@@ -835,6 +860,38 @@ class _TimerContentState extends State<TimerContent> {
         Center(
           child: Column(
             children: [
+              // Weather Card
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Card(
+                  color: const Color(0xFF87C4B4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        if (_isLoadingWeather)
+                          const CircularProgressIndicator()
+                        else if (_currentWeather != null) ...[
+                          Text(
+                            'Weather: ${_currentWeather!.description}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'Temperature: ${_currentWeather!.temperature.toStringAsFixed(1)} °C',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               // Existing timer content
               Padding(
                 padding: const EdgeInsets.all(8.0),
